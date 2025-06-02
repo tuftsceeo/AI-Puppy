@@ -27,11 +27,6 @@ from pyscript import document, window, when
 console.log("loaded up to here 0")
 
 try:
-    import ampy
-    console.log("loaded up to here 2")
-    console.log(f"ampy module: {ampy}")
-    console.log(f"ampy.__file__: {getattr(ampy, '__file__', 'No __file__ attribute')}")
-
     import restapi
     console.log("loaded up to here 3")
 

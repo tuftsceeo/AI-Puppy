@@ -11,6 +11,9 @@ buttons.
 Updated to use uboard instead of terminal system.
 """
 
+from js import console
+console.log("HERE 1")
+
 from pyscript import document, window
 import my_globals
 import print_jav
@@ -18,6 +21,8 @@ import sensor_mod
 import file_os
 import asyncio
 import my_gif
+
+console.log("HERE 2")
 
 async def stop_running_code():
     """
