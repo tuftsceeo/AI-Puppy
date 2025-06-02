@@ -11,6 +11,7 @@ Authors:
 
 References:
     - xterm.js: https://xtermjs.org/docs/api/terminal/classes/terminal/#options
+    - Updated to use uboard instead of old terminal technology
 """
 import sys
 
@@ -22,12 +23,9 @@ try:
 except:
     print("Failed to access js console")
 
-
 from pyscript import document, window, when
 console.log("loaded up to here 0")
 
-# from js import window
-# console.log("loaded up to here 1")
 try:
     import ampy
     console.log("loaded up to here 2")
@@ -63,17 +61,27 @@ try:
     console.log("loaded up to here 10")
 
     import helper_mod
+    console.log("loaded up to here 11")
+    
+    # Import the new uboard module
+    import upython_board
+    console.log("loaded up to here 12 - uboard imported")
+    
 except Exception as e:
     console.log("Error importing modules: ", e)
 
 console.log("MAIN.PY IMPORTS COMPLETE")
 
+# Initialize uboard instead of old terminal
+uboard = upython_board.uRepl()
+
 try:
     console.log("main.py: running my_globals.init()...")
     my_globals.init()
+    # Update my_globals to use uboard instead of terminal
+    my_globals.uboard = uboard
 except Exception as e:
     console.log("Something went wrong initializing global variables: ", e)
-
 
 console.log("Initial button states:")
 console.log("Connect button disabled:", my_globals.connect.disabled)
@@ -101,15 +109,17 @@ async def on_custom_disconnect(event=None):
     document.getElementById('overlay').style.display = 'flex'
 
 #callback when disconnected physically
-def second_half_disconnect(event=None):
+async def second_half_disconnect(event=None):
     """
     Handle the second half of the disconnection process. Callback when method 
-    disconnect is called on terminal.
+    disconnect is called on uboard.
     
     Args:
         event (optional): The event triggering the disconnection.
     """
     my_globals.connect.onclick = on_connect
+    my_globals.connect.innerText = 'Connect'
+    my_globals.connect.classList.remove('connected')
     window.fadeImage(' ') #do this to clear gifs
     helper_mod.clean_up_disconnect()
     
@@ -117,9 +127,8 @@ async def call_get_list():
     """
     Calls function get_list, which gets the list of files on SPIKE. 
     It calls it a max amount of 10 times until it succeeds. 
-    (This was done becaue get_list gives errors sometimes when it gets 
+    (This was done because get_list gives errors sometimes when it gets 
     called. It usually works on the second try)
-    
     """
     #ERROR CHECKING
     timeout = 1  # Timeout duration in seconds (change this)
@@ -127,7 +136,7 @@ async def call_get_list():
     max_timeout_count = 10 * timeout  # Adjust as necessary
     while True:
         try:
-            await file_os.getList(my_globals.terminal, my_globals.file_list)
+            await uboard.getList(my_globals.file_list)
             print("get_list completed successfully")
             break
         except Exception as e:
@@ -145,31 +154,45 @@ async def call_get_list():
         await asyncio.sleep(0.1)  # Short delay before retrying 
     #ERROR CHECKING
 
-
 async def on_connect(event):
     """
-    Handle connection event to the Spike Prime.
+    Handle connection event to the Spike Prime using uboard.
     
     Args:
         event (optional): The event triggering the connection.
     """
     console.log("Connect button clicked - entering on_connect")
     try:
-        console.log(f"Terminal object: {my_globals.terminal}")
-        success = await my_globals.terminal.connect('repl')
-        console.log(f"Connection attempt result: {success}")
+        console.log(f"uboard object: {uboard}")
         
-        if not success:
+        # Check if we're already connected and should disconnect
+        if uboard.connected:
+            await uboard.board.disconnect()
+            return
+            
+        # Connect using uboard
+        stop = True  # equivalent to 'repl' mode
+        await uboard.board.connect('repl', stop)
+        
+        # Wait for connection to establish
+        for i in range(100):
+            if uboard.connected:
+                break
+            await asyncio.sleep(0.1)
+            
+        if not uboard.connected:
             console.error("Board connection failed")
             raise Exception("Failed to connect to board")
+            
     except Exception as e:
         console.error(f"Connection error: {e}")
-        second_half_disconnect()
+        await second_half_disconnect()
+        return
 
-    if my_globals.terminal.connected:
+    if uboard.connected:
         console.log("Successfully connected to board")
         #enable buttons
-        #turn on progress bar to indicate begginning of initialization
+        #turn on progress bar to indicate beginning of initialization
         my_globals.progress_bar.style.display = 'block' 
         my_globals.progress_bar.value = 0
 
@@ -179,17 +202,16 @@ async def on_connect(event):
         #Initializing sensor code (below)
         print("Before paste")
         my_globals.progress_bar.value = 25
-        await my_globals.terminal.paste(sensor_mod.sensor_code, 'hidden')
+        await uboard.paste(sensor_mod.sensor_code, hidden=True)
         print("After paste")
         my_globals.progress_bar.value = 50
 
-        #initializng file list code, hide scroll bar
+        #initializing file list code, hide scroll bar
         document.getElementById('terminalFrameId').style.overflow = 'hidden'
         my_globals.progress_bar.value = 75
         print("Before-THEE-LIST")
 
         await call_get_list()
-
 
         print("THEE-LIST")
         my_globals.progress_bar.value = 100
@@ -206,16 +228,14 @@ async def on_connect(event):
         document.getElementById('files').style.visibility = 'visible'
         #allow user to input only after paste is done
         document.getElementById('repl').style.display = 'block' 
-        #terminal.terminal.attachCustomKeyEventHandler(on_user_input)
-
+        
         my_globals.progress_bar.style.display = 'none'
-     
         
         await helper_mod.check_files() #updated (displays sensors)
     else:
         #allow user to connect back if they clicked 'cancel' 
         #when choosing the port to connect to
-        second_half_disconnect()
+        await second_half_disconnect()
 
 async def on_load(event):
     """
@@ -229,7 +249,7 @@ async def on_load(event):
     print("on load")
     await sensor_mod.close_sensor() #close sensors
     print("SIMON")
-    if my_globals.terminal.connected:
+    if uboard.connected:
         print_jav.print_custom_terminal("Downloading code, please wait...")
 
         git_paths = my_globals.path.value.split() #gets arrays of urls
@@ -248,16 +268,16 @@ async def on_load(event):
             )
 
             reply = await restapi.get(current_path)
-            status = await my_globals.terminal.download(name,reply)
+            # Use uboard's upload method instead of terminal.download
+            success = await uboard.board.upload(name, reply)
             counter += 1
-            if not status: 
+            if not success: 
                 window.alert(
                     f"Failed to load {name}. Click Ok to continue " 
                     "downloading other files"
-                    
                 )  
         
-        #initializng file list code, hide scroll bar
+        #initializing file list code, hide scroll bar
         document.getElementById('terminalFrameId').style.overflow = 'hidden'
 
         await call_get_list()
@@ -266,7 +286,6 @@ async def on_load(event):
     
         my_globals.progress_bar.style.display = 'none'
         my_globals.percent_text.style.display = 'none'
-        #await asyncio.sleep(0.4)  # Short delay before enablign download
         print_jav.print_custom_terminal("Download complete!")
         #check to see that you have appropriate files and update UI
         await helper_mod.check_files() #enables buttons by calling on_select
@@ -289,11 +308,9 @@ async def on_upload_file(event):
     #saving_js_module is really an instance of the class 'Files' 
     # in file_library.js
     code_retrieved = await my_globals.saving_js_module.read('fileRead') 
-    #content.innerText = code_retrieved
     #making editor show the code just fetched
     my_globals.my_green_editor.code = code_retrieved
     print('file beginning: ',code_retrieved[:10])
-    
 
 async def yes_on_disconnect(event):
     """
@@ -307,11 +324,10 @@ async def yes_on_disconnect(event):
     my_globals.save_on_disconnect = True
     await helper_mod.on_save(None) 
     my_globals.physical_disconnect = False
-    second_half_disconnect()
+    await second_half_disconnect()
     document.getElementById('sensor-info').innerHTML = ""   
     helper_mod.enable_buttons([my_globals.connect])
 
-    
 def no_on_disconnect(event):
     """
     Handle denial of saving data on disconnection.
@@ -323,12 +339,27 @@ def no_on_disconnect(event):
     document.getElementById('overlay').style.display = 'none'
     my_globals.save_on_disconnect = True
     my_globals.physical_disconnect = False
-    second_half_disconnect()
+    # Use asyncio to call the async function
+    asyncio.create_task(second_half_disconnect())
     #clear sensor display
     document.getElementById('sensor-info').innerHTML = ""  
     helper_mod.enable_buttons([my_globals.connect]) 
-    
 
+# Handle board event for code execution
+async def handle_board(event):
+    """
+    Handle board execution events from the editor.
+    
+    Args:
+        event: The event containing the code to execute.
+    """
+    code = event.code
+    if uboard.connected:
+        await uboard.paste(code)
+        uboard.focus()
+        return False  # return False to avoid executing on browser
+    else:
+        return True
 
 # expose stop_running_code function to JavaScript
 window.stop_running_code = helper_mod.stop_running_code
@@ -342,8 +373,8 @@ window.on_save = helper_mod.on_save
 
 #assigning buttons to functions to be called onclick
 my_globals.save_btn.onclick = helper_mod.on_save
-my_globals.my_green_editor.addEventListener('mpy-run', helper_mod.handle_board)
-my_globals.my_green_editor.handleEvent = helper_mod.handle_board
+my_globals.my_green_editor.addEventListener('mpy-run', handle_board)
+my_globals.my_green_editor.handleEvent = handle_board
 
 #Assigning clicks to functions
 my_globals.file_list.onchange = helper_mod.on_select
@@ -353,7 +384,6 @@ my_globals.sensors.onclick = sensor_mod.on_sensor_info
 my_globals.yes_btn.onclick = yes_on_disconnect
 my_globals.no_btn.onclick = no_on_disconnect
 
-
 #start disabled until connected
 helper_mod.disable_buttons([my_globals.sensors, my_globals.download, 
                     my_globals.save_btn, my_globals.upload_file_btn])
@@ -361,17 +391,9 @@ helper_mod.disable_buttons([my_globals.sensors, my_globals.download,
 my_globals.debug_btn.disabled = True
 my_globals.terminal_btn.disabled = True
 
-# Let HTML handle initial button states
-# my_globals.connect.disabled = False
-# my_globals.connect.classList.add('active')
-# my_globals.custom_run_button.disabled = True
-# my_globals.custom_run_button.classList.add('disabled')
-
-#set a callback function that is called when disconnection happens
-my_globals.terminal.disconnect_callback = second_half_disconnect
-#set a callback function that is called every time data is received 
-#this function is called every time the user types on repl/debug for example
-my_globals.terminal.newData_callback = print_jav.on_data_jav 
+# Set up uboard callbacks
+uboard.disconnect_callback = second_half_disconnect
+uboard.newData_callback = print_jav.on_data_jav 
 
 #set current dictionary for desired lesson
 my_gif.set_dictionary()
@@ -381,6 +403,4 @@ console.log("Initializing main.py...")
 console.log("Connect button element:", my_globals.connect)
 console.log("Connect button onclick handler:", my_globals.connect.onclick)
 console.log("Connect button classes:", my_globals.connect.classList.toString())
-
-
- 
+console.log("uboard initialized:", uboard)

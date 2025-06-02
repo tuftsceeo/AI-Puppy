@@ -46,12 +46,11 @@ Global Variables:
 
     - saving_js_module: Instance of the file_library module for file saving 
                         and uploading.
-    - terminal: Instance of the ampy.Ampy class, 
-                configured for SPIKE or Arduino Nano.
+    - uboard: Instance of the upython_board.uRepl class for SPIKE Prime communication.
 
 Dependencies:
     - pyscript: Provides access to document and JS modules.
-    - ampy: Provides the Ampy class for terminal operations.
+    - upython_board: Provides the uRepl class for board communication.
     - file_library: Provides methods for file saving and uploading.
 """
 
@@ -62,8 +61,8 @@ try:
     from pyscript import document
     console.log("Loaded 1")
 
-    from core_chris import ampy
-    console.log("Loaded 2")
+    import upython_board
+    console.log("Loaded 2 - upython_board imported")
 
     from pyscript.js_modules import file_library
     console.log("Loaded 3")
@@ -74,6 +73,7 @@ except Exception as e:
     console.log("Failed to import necessary modules.")
 
 console.log("Setting up global variables...")
+
 def init():
     console.log("Initializing global variables...")
     """
@@ -86,7 +86,6 @@ def init():
     global sensor, stop_loop, ARDUINO_NANO, SPIKE, javi_buffer, found_key
     global physical_disconnect, proper_name_of_file, isRunning
     global current_gif_dictionary, lesson_num, custom_terminal_ele
-
 
     console.log("Made it HERE 1")
 
@@ -125,7 +124,6 @@ def init():
 
     console.log("Made it HERE 2")
 
-
     #buttons
     save_btn = document.getElementById('save_button')
     connect = document.getElementById('connect-spike')
@@ -157,83 +155,20 @@ def init():
     global saving_js_module
     saving_js_module = file_library.newFile()
 
-
     console.log("Made it HERE 3")
 
-
-    #terminal
-    global terminal
-
-
-    class ProgressWrapper:
-        def __init__(self, js_element):
-            self.element = js_element
-        
-        @property
-        def value(self):
-            return self.element.value
-        
-        @value.setter
-        def value(self, new_value):
-            self.element.value = new_value
-
-    console.log("About to use the progress wrapper")
-    # Use the wrapper
-    try:
-        progress_wrapper = ProgressWrapper(progress_bar)
-        terminal = ampy.Ampy(ARDUINO_NANO, progress_wrapper)
-        console.log("Created Ampy with progress wrapper")
-    except Exception as e:
-        console.log(f"Failed with wrapper approach: {str(e)}")
-        # Fallback to no progress bar
-        terminal = ampy.Ampy(ARDUINO_NANO)
-
-    #terminal = ampy.Ampy(SPIKE, progress_bar) #use this if using arduino
-    terminal = ampy.Ampy(ARDUINO_NANO, progress_bar)
-
-    console.log(f"ampy module: {ampy}")
-    console.log(f"dir(ampy): {dir(ampy)}")
-    console.log(f"Ampy class in ampy: {getattr(ampy, 'Ampy', 'No Ampy class found')}")
-    console.log(f"ARDUINO_NANO value: {ARDUINO_NANO}")
-    console.log(f"progress_bar object: {progress_bar}")
-
-    console.log(f"progress_bar type: {type(progress_bar).__name__}")
-
-
-    # First try creating Ampy without progress_bar
-    try:
-        terminal = ampy.Ampy(ARDUINO_NANO)
-        console.log("Created Ampy with buffer size only")
-        
-        # If successful, try to set the progress bar separately
-        try:
-            terminal.status = progress_bar
-            console.log("Set progress_bar separately")
-        except Exception as e:
-            console.log(f"Could not set progress_bar: {str(e)}")
-    except Exception as e:
-        console.log(f"Failed to create Ampy even with minimal parameters: {str(e)}")
-
-    try:
-        # First, check if the Ampy class is correctly imported
-        console.log(f"Trying to access Ampy class: {ampy.Ampy}")
-        
-        # Try creating with safe string values instead of variables
-        terminal = ampy.Ampy(128, progress_bar)
-        console.log("Ampy instance created successfully")
-    except Exception as e:
-        console.log(f"Error creating Ampy instance: {str(e)}")
-        console.log(f"Error type: {type(e).__name__}")
+    #uboard for SPIKE Prime communication
+    global uboard
     
     try:
-        terminal = ampy.Ampy()
-        console.log("Created Ampy with default parameters")
-    except Exception as e2:
-        console.log(f"All Ampy initialization attempts failed: {str(e2)}")
-
-    try:
-        terminal = ampy.Ampy(ARDUINO_NANO, progress_bar)
+        uboard = upython_board.uRepl()
+        console.log("uboard instance created successfully")
+        console.log(f"uboard object: {uboard}")
+        console.log(f"uboard connected status: {uboard.connected}")
     except Exception as e:
-        console.log("Failed to initialize terminal: ", e)
+        console.log(f"Error creating uboard instance: {str(e)}")
+        console.log(f"Error type: {type(e).__name__}")
+        # Create a fallback None object if uboard creation fails
+        uboard = None
 
     console.log("Global variables initialized")

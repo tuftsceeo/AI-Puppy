@@ -8,6 +8,7 @@ board, including stopping code execution, cleaning up after disconnection,
 removing files, selecting files, handling board events, and enabling/disabling 
 buttons.
 
+Updated to use uboard instead of terminal system.
 """
 
 from pyscript import document, window
@@ -18,14 +19,14 @@ import file_os
 import asyncio
 import my_gif
 
-def stop_running_code():
+async def stop_running_code():
     """
-    Stops the currently running code, performs necessary cleanup, a
-    nd updates the UI.
+    Stops the currently running code, performs necessary cleanup, 
+    and updates the UI.
 
     This function stops the code execution on the Spike Prime, updates 
     the status in the UI, re-enables the buttons, and clears any displayed gifs.
-    It assumes that the terminal is connected and that necessary global 
+    It assumes that the uboard is connected and that necessary global 
     variables are updated accordingly.
 
     Raises:
@@ -36,9 +37,10 @@ def stop_running_code():
     """
     my_globals.isRunning = False
     my_globals.found_key = False
-    if my_globals.terminal.connected:
+    if my_globals.uboard.connected:
         my_gif.display_gif("") #clear gifs when stop running
-        await my_globals.terminal.send('\x03')
+        # Send keyboard interrupt to stop running code
+        await my_globals.uboard.board.eval('\x03')
         print_jav.print_custom_terminal("""Code execution ended. Please press 
                                         the button to run the code again.""")
         enable_buttons([my_globals.sensors, my_globals.download, 
@@ -50,31 +52,30 @@ def stop_running_code():
         await sensor_mod.on_sensor_info(None) #display sensors
         print('stopped code')
 
-        #document.getElementById('gif').style.display = 'none' #do not do this
         window.fadeImage('') #do this to clear gifs
 
-def debugging_time():
+async def debugging_time():
+    """
+    Enable debugging mode - disable certain buttons and enable terminal.
+    """
     #disable file list 
-    #file_list - file list globals
-    helper_mod.disable_buttons([my_globals.debug_btn, my_globals.terminal_btn,
-                                my_globals.file_list])
+    disable_buttons([my_globals.debug_btn, my_globals.terminal_btn,
+                     my_globals.file_list])
     await sensor_mod.close_sensor()
-    helper_mod.enable_buttons([my_globals.terminal_btn])
+    enable_buttons([my_globals.terminal_btn])
     my_globals.terminal_btn.style.backgroundColor = "red"
 
-#in custom terminal
-def not_debugging():
-    helper_mod.disable_buttons([my_globals.terminal_btn])
-    helper_mod.enable_buttons([my_globals.debug_btn, my_globals.download, 
-                            my_globals.sensors, my_globals.connect, 
-                            my_globals.custom_run_button, my_globals.save_btn, 
-                            my_globals.upload_file_btn, my_globals.file_list])
+async def not_debugging():
+    """
+    Exit debugging mode - re-enable buttons and restore normal operation.
+    """
+    disable_buttons([my_globals.terminal_btn])
+    enable_buttons([my_globals.debug_btn, my_globals.download, 
+                    my_globals.sensors, my_globals.connect, 
+                    my_globals.custom_run_button, my_globals.save_btn, 
+                    my_globals.upload_file_btn, my_globals.file_list])
     my_globals.terminal_btn.style.backgroundColor = "#ccc"
     await sensor_mod.on_sensor_info(None)
-
-
-
-
 
 def clean_up_disconnect():
     """
@@ -100,13 +101,17 @@ def clean_up_disconnect():
                                         reading sensors - RELOADING PAGE""")
         #reloads page
         document.getElementById(f"lesson{my_globals.lesson_num}-link").click() 
-    if my_globals.terminal.connected:
+    
+    if my_globals.uboard.connected:
         print('connected')
         print('after disconnect, passed x03')
-        my_globals.terminal.send('\x03') #to stop any program that is running
-        my_globals.terminal.board.disconnect()
+        # Send keyboard interrupt to stop any running program
+        asyncio.create_task(my_globals.uboard.board.eval('\x03'))
+        # Disconnect the board
+        asyncio.create_task(my_globals.uboard.board.disconnect())
     else:
         print("DISCONNECTED")
+    
     if(my_globals.isRunning):
         #stops animation of run buttton (displaying purposes)
         document.getElementById('custom-run-button').click() 
@@ -124,8 +129,6 @@ def clean_up_disconnect():
     #make the connect button green
     if (my_globals.connect.classList.contains('connected')):
         my_globals.connect.classList.remove('connected')
-    
-
 
 async def check_files():
     """
@@ -156,7 +159,6 @@ async def check_files():
         if option_text == "/flash/CEEO_AI.py":
             print("AQUIUIUUIIUI")
             ceeo_file_found = True
-            
     
     if not Lesson_file_found or not ceeo_file_found:
         new_option = document.createElement('option')
@@ -182,9 +184,6 @@ async def check_files():
         print('not empty')
         window.stopFadingWarningIcon()
         await on_select(None)  # Attempt to call on_select
-        
-             
-
 
 async def on_select(event):
     """
@@ -218,7 +217,7 @@ async def on_select(event):
     while True:
         try:
             my_globals.my_green_editor.code = await file_os.read_code(
-                my_globals.terminal, my_globals.file_list)
+                my_globals.uboard, my_globals.file_list)
             print("on_select completed successfully")
             break
         except Exception as e:
@@ -249,7 +248,7 @@ async def handle_board(event):
     This function is triggered by an event, specifically when the custom run 
     button ('mpy-run') is pressed. It updates the global state, 
     disables certain buttons, displays a loading indicator, and sends code to 
-    the terminal for evaluation. It also handles cases where the terminal 
+    the uboard for evaluation. It also handles cases where the uboard 
     is not connected.
 
     Args:
@@ -266,7 +265,7 @@ async def handle_board(event):
         my_globals.isRunning = True
         print("SIUUU")
         await sensor_mod.close_sensor()
-        if my_globals.terminal.connected:
+        if my_globals.uboard.connected:
             disable_buttons([my_globals.sensors, my_globals.download, 
                              my_globals.custom_run_button, 
                              my_globals.upload_file_btn, my_globals.save_btn,
@@ -279,19 +278,18 @@ async def handle_board(event):
             document.getElementById('gif').style.display = 'block'
             code = event.detail.code
 
-            await my_globals.terminal.eval('\x05' + code + "#**END-CODE**#" + 
-                                           '\x04')
-            my_globals.terminal.focus()
+            # Use uboard's paste method instead of terminal.eval
+            await my_globals.uboard.paste('\x05' + code + "#**END-CODE**#" + 
+                                         '\x04')
+            my_globals.uboard.focus()
             enable_buttons([my_globals.custom_run_button])
             return False  #return False to avoid executing on browser
         else:
-            print('terminal not connected')
+            print('uboard not connected')
             return True
     # 'else' is needed only if using the default editor run button (we hid it)
     # else:
     #     code = event.code 
-
-
 
 def disable_buttons(list_to_disable):
     """
@@ -315,10 +313,8 @@ def disable_buttons(list_to_disable):
             element.classList.add('disabled')  # add a 'disabled' class
         elif (element.classList.contains('button1')): #if you are a button 1
             element.classList.remove('active')
-        
 
-
-def enable_buttons(list_to_disable):
+def enable_buttons(list_to_enable):
     """
     Enables a list of buttons and updates their display state.
 
@@ -334,7 +330,7 @@ def enable_buttons(list_to_disable):
     Returns:
         None
     """
-    for element in list_to_disable:
+    for element in list_to_enable:
         #controls actually being able to click and activate it/calling 
         #corresponding function
         element.disabled = False #includes disabling select
@@ -342,8 +338,6 @@ def enable_buttons(list_to_disable):
             element.classList.remove('disabled')  # remove the 'disabled' class
         elif (element.classList.contains('button1')): #if you are a button 1
             element.classList.add('active') #controls display for other buttons
-        
-
 
 async def on_save(event):
     """
@@ -354,7 +348,7 @@ async def on_save(event):
     1. Closes any active sensors.
     2. Disables buttons to prevent user interaction during the save process.
     3. Saves the current code locally on the user's computer.
-    4. Saves the code onto a SPIKE robot.
+    4. Saves the code onto a SPIKE robot using uboard.
     5. Updates the user interface to reflect the saving status.
     6. Re-enables the buttons and updates the sensor display if the save is 
         not triggered by a disconnect event.
@@ -377,22 +371,30 @@ async def on_save(event):
     #passing code and name of file (to save locally on computer)
     await my_globals.saving_js_module.save(my_editor_code, name_file)
 
-    #SAVING ON SPIKE robot
+    #SAVING ON SPIKE robot using uboard
     print_jav.print_custom_terminal("Saving code on SPIKE, please wait...")
     print_jav.print_custom_terminal("...")
     print_jav.print_custom_terminal("...")
     print_jav.print_custom_terminal("...")
     my_globals.progress_bar.style.display = 'block'
-    status = await my_globals.terminal.download(name_file, my_editor_code)
-    if not status: 
-        window.alert(f"""Failed to load {name_file}. 
-                        Click Ok to continue downloading other files""")  
+    
+    try:
+        # Use uboard's upload method instead of terminal.download
+        status = await my_globals.uboard.board.upload(name_file, my_editor_code)
+        if not status: 
+            window.alert(f"""Failed to load {name_file}. 
+                            Click Ok to continue downloading other files""")  
+    except Exception as e:
+        print(f"Error saving file: {e}")
+        window.alert(f"Failed to save {name_file}: {str(e)}")
+        status = False
+    
     my_globals.progress_bar.style.display = 'none'
     print_jav.print_custom_terminal("Saved on SPIKE!")
-    helper_mod.enable_buttons([my_globals.download, my_globals.sensors, 
-                               my_globals.connect, my_globals.custom_run_button,
-                               my_globals.save_btn, my_globals.upload_file_btn, 
-                               my_globals.file_list, my_globals.debug_btn])
+    enable_buttons([my_globals.download, my_globals.sensors, 
+                    my_globals.connect, my_globals.custom_run_button,
+                    my_globals.save_btn, my_globals.upload_file_btn, 
+                    my_globals.file_list, my_globals.debug_btn])
     await asyncio.sleep(0.1)  # allow download to finish before enabling sensors
     
     #only display sensors when save is called by clicking save button
@@ -400,7 +402,3 @@ async def on_save(event):
     if (not my_globals.save_on_disconnect):
         await sensor_mod.on_sensor_info(None) #display sensors (only call this)
         print("ENABLED BUTTONS ON SAVE")
-
-
-
-
