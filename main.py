@@ -16,14 +16,10 @@ References:
 import sys
 
 print("main.py is being loaded!")
-try:
-    from js import console
-    import traceback
-    console.log("MAIN.PY IS LOADED - CONSOLE LOG")
-except:
-    print("Failed to access js console")
 
 from pyscript import document, window, when
+from js import console
+
 console.log("loaded up to here 0")
 
 try:

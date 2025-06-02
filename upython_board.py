@@ -1,7 +1,11 @@
 # https://cdn.jsdelivr.net/npm/micro-repl@0.5.2/serial.js
 
 from pyscript import window, document
+print("Loaded upython_board.py, loaded pyscript")
+
 from pyscript.js_modules.micro_repl import default as Board
+print("Loaded upython_board.py, loaded micro_repl")
+
 import json, asyncio
 
 FIFO_SIZE = 10000
