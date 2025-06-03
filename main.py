@@ -63,8 +63,12 @@ except Exception as e:
 
 console.log("MAIN.PY IMPORTS COMPLETE")
 
-# Initialize uboard instead of old terminal
-uboard = upython_board.uRepl()
+# Initialize uboard
+try:
+    uboard = upython_board.uRepl()
+    console.log("uboard initialized successfully")
+except Exception as e:
+    console.error(f"Failed to initialize uboard: {e}")
 
 try:
     console.log("main.py: running my_globals.init()...")
@@ -336,22 +340,6 @@ def no_on_disconnect(event):
     document.getElementById('sensor-info').innerHTML = ""  
     helper_mod.enable_buttons([my_globals.connect]) 
 
-# Handle board event for code execution
-async def handle_board(event):
-    """
-    Handle board execution events from the editor.
-    
-    Args:
-        event: The event containing the code to execute.
-    """
-    code = event.code
-    if uboard.connected:
-        await uboard.paste(code)
-        uboard.focus()
-        return False  # return False to avoid executing on browser
-    else:
-        return True
-
 # expose stop_running_code function to JavaScript
 window.stop_running_code = helper_mod.stop_running_code
 
@@ -364,8 +352,8 @@ window.on_save = helper_mod.on_save
 
 #assigning buttons to functions to be called onclick
 my_globals.save_btn.onclick = helper_mod.on_save
-my_globals.my_green_editor.addEventListener('mpy-run', handle_board)
-my_globals.my_green_editor.handleEvent = handle_board
+my_globals.my_green_editor.addEventListener('mpy-run', helper_mod.handle_board)
+my_globals.my_green_editor.handleEvent = helper_mod.handle_board
 
 #Assigning clicks to functions
 my_globals.file_list.onchange = helper_mod.on_select

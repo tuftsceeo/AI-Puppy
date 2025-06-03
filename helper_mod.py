@@ -43,22 +43,44 @@ async def stop_running_code():
     my_globals.isRunning = False
     my_globals.found_key = False
     if my_globals.uboard.connected:
-        my_gif.display_gif("") #clear gifs when stop running
-        # Send keyboard interrupt to stop running code
-        await my_globals.uboard.board.eval('\x03')
-        print_jav.print_custom_terminal("""Code execution ended. Please press 
-                                        the button to run the code again.""")
-        enable_buttons([my_globals.sensors, my_globals.download, 
-                        my_globals.custom_run_button, my_globals.save_btn, 
-                        my_globals.upload_file_btn, my_globals.connect,
-                        my_globals.file_list, my_globals.debug_btn, 
-                        my_globals.terminal_btn])
+        try:
+            my_gif.display_gif("") #clear gifs when stop running
+            # Send keyboard interrupt to stop running code
+            await my_globals.uboard.board.eval('\x03')
+            
+            # Add small delay to allow board to process interrupt
+            await asyncio.sleep(0.5)
+            
+            # Clear any potential pending output
+            await my_globals.uboard.board.eval('', timeout=0.1)
+            
+            print_jav.print_custom_terminal("Code execution ended. Please press the button to run the code again.")
+            
+            enable_buttons([my_globals.sensors, my_globals.download, 
+                          my_globals.custom_run_button, my_globals.save_btn, 
+                          my_globals.upload_file_btn, my_globals.connect,
+                          my_globals.file_list, my_globals.debug_btn, 
+                          my_globals.terminal_btn])
 
-        await sensor_mod.on_sensor_info(None) #display sensors
-        print('stopped code')
-
+            await sensor_mod.on_sensor_info(None) #display sensors
+            print('stopped code successfully')
+            
+        except Exception as e:
+            print(f"Error stopping code: {e}")
+            print_jav.print_custom_terminal("Error stopping code. Trying to recover...")
+            # Attempt to recover by reconnecting
+            try:
+                await my_globals.uboard.board.disconnect()
+                await asyncio.sleep(1)
+                stop = True  # equivalent to 'repl' mode
+                await my_globals.uboard.board.connect('repl', stop)
+                print_jav.print_custom_terminal("Recovered connection. You can now run code again.")
+            except Exception as reconnect_error:
+                print(f"Recovery failed: {reconnect_error}")
+                print_jav.print_custom_terminal("Could not recover connection. Please reconnect manually.")
+        
         window.fadeImage('') #do this to clear gifs
-
+        
 async def debugging_time():
     """
     Enable debugging mode - disable certain buttons and enable terminal.
