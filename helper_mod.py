@@ -104,7 +104,7 @@ async def not_debugging():
     my_globals.terminal_btn.style.backgroundColor = "#ccc"
     await sensor_mod.on_sensor_info(None)
 
-def clean_up_disconnect():
+async def clean_up_disconnect():
     """
     Cleans up after a disconnection event, stops any running program, 
     and updates the UI.
@@ -122,7 +122,7 @@ def clean_up_disconnect():
         None
     """
     print("CLEAN")
-    #if you are reading sensors and you physicaly disconnect
+    #if you are reading sensors and you physically disconnect
     if(my_globals.sensors.onclick == sensor_mod.close_sensor): 
         print_jav.print_custom_terminal("""Physically Disconnected while 
                                         reading sensors - RELOADING PAGE""")
@@ -132,15 +132,25 @@ def clean_up_disconnect():
     if my_globals.uboard.connected:
         print('connected')
         print('after disconnect, passed x03')
-        # Send keyboard interrupt to stop any running program
-        asyncio.create_task(my_globals.uboard.board.eval('\x03'))
-        # Disconnect the board
-        asyncio.create_task(my_globals.uboard.board.disconnect())
+        try:
+            # Send keyboard interrupt to stop any running program
+            await my_globals.uboard.board.eval('\x03')
+            # Add small delay to allow board to process interrupt
+            await asyncio.sleep(0.1)
+            # Disconnect the board
+            await my_globals.uboard.board.disconnect()
+        except Exception as e:
+            print(f"Error during disconnect cleanup: {e}")
+            # Force disconnect if eval fails
+            try:
+                await my_globals.uboard.board.disconnect()
+            except Exception as disconnect_error:
+                print(f"Error during force disconnect: {disconnect_error}")
     else:
         print("DISCONNECTED")
     
     if(my_globals.isRunning):
-        #stops animation of run buttton (displaying purposes)
+        #stops animation of run button (displaying purposes)
         document.getElementById('custom-run-button').click() 
 
     print_jav.print_custom_terminal("Disconnected from your Spike Prime.")

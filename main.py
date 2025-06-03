@@ -115,7 +115,7 @@ async def second_half_disconnect(event=None):
     my_globals.connect.innerText = 'Connect'
     my_globals.connect.classList.remove('connected')
     window.fadeImage(' ') #do this to clear gifs
-    helper_mod.clean_up_disconnect()
+    await helper_mod.clean_up_disconnect()
     
 async def call_get_list():
     """
@@ -322,7 +322,7 @@ async def yes_on_disconnect(event):
     document.getElementById('sensor-info').innerHTML = ""   
     helper_mod.enable_buttons([my_globals.connect])
 
-def no_on_disconnect(event):
+async def no_on_disconnect(event):
     """
     Handle denial of saving data on disconnection.
     
@@ -333,11 +333,11 @@ def no_on_disconnect(event):
     document.getElementById('overlay').style.display = 'none'
     my_globals.save_on_disconnect = True
     my_globals.physical_disconnect = False
-    # Use asyncio to call the async function
-    asyncio.create_task(second_half_disconnect())
+    # Properly await the async function
+    await second_half_disconnect()
     #clear sensor display
     document.getElementById('sensor-info').innerHTML = ""  
-    helper_mod.enable_buttons([my_globals.connect]) 
+    helper_mod.enable_buttons([my_globals.connect])
 
 # expose stop_running_code function to JavaScript
 window.stop_running_code = helper_mod.stop_running_code
