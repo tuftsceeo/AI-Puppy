@@ -1,10 +1,15 @@
 # https://cdn.jsdelivr.net/npm/micro-repl@0.5.2/serial.js
 
 from pyscript import window, document
+from js import console
 print("Loaded upython_board.py, loaded pyscript")
 
+
+# WHYYYYYYYYY
 from pyscript.js_modules.micro_repl import default as Board
 print("Loaded upython_board.py, loaded micro_repl")
+
+
 
 import json, asyncio
 
@@ -40,6 +45,8 @@ try:
     window.navigator.serial.requestPort
 except:
     window.alert('you have to use Chrome to talk over serial')
+
+print("HERE - upothon_board.py")
 
 class uRepl():
     def __init__(self, baudrate = 115200, buffer_size = 256):

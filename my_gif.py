@@ -96,7 +96,7 @@ def set_dictionary():
     Set the current GIF dictionary based on the current lesson number.
     The lesson number is fetched from the global context.
     """
-    my_globals.lesson_num = window.checkCurrentLesson() 
+    my_globals.lesson_num = window.checkCurrentLesson
     print("Curr_lesson: ", my_globals.lesson_num)
     if my_globals.lesson_num == 1:
         my_globals.current_gif_dictionary = my_gif_dict_L1

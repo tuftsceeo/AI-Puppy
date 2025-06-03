@@ -9,6 +9,8 @@ This just means that it won't show in the REPL (debug) but it is still there
 
 Authors: Javier Laveaga and William Goldman
 
+Updated to use uboard instead of terminal
+
 """
 
 import my_globals
@@ -174,8 +176,6 @@ port_info
 """
 
 
-
-
 #sensor_info and get terminal in same button
 async def on_sensor_info(event):
     """
@@ -206,8 +206,12 @@ async def on_sensor_info(event):
                       "Yellow", "Orange", "Azure", "Black", "White", "Unknown"]
 
     while not my_globals.stop_loop:
-        port_info_array = await my_globals.terminal.eval(execute_code, 'hidden')
-
+        # Updated to use uboard instead of terminal
+        try:
+            port_info_array = await my_globals.uboard.eval(execute_code, hidden=True)
+        except Exception as e:
+            print(f"Error evaluating sensor code: {e}")
+            break
 
         # Initialize HTML content for sensor info
         sensor_info_html = "<div class='sensor-info-container'>" 
@@ -222,7 +226,8 @@ async def on_sensor_info(event):
                     break
                 #number is tuple with some sort of sensor value
 
-                if not my_globals.terminal.connected:
+                # Updated to check uboard connection instead of terminal
+                if not my_globals.uboard.connected:
                     break
                 number = t[3] #number associated with device
                 #For color sensor
@@ -270,6 +275,9 @@ async def on_sensor_info(event):
         # Update the sensor info container with new HTML content
         document.getElementById('sensor-info').innerHTML = sensor_info_html
         print("In LOOP ")
+
+        # Add a small delay to prevent overwhelming the system
+        await asyncio.sleep(0.1)
 
     print("STOP-LOOP True")
 
@@ -345,9 +353,6 @@ def display_color_sensor(port_name, color_name, color_array, number,
     return sensor_info_html
 
 
-
-
-
 async def close_sensor(event=None):
     """
     Closes the sensor information display and re-enables other buttons.
@@ -375,4 +380,4 @@ async def close_sensor(event=None):
     my_globals.sensors.innerText = 'Sensors'
     print("REACHED")
     #show terminal
-    document.getElementById('repl').style.display = 'block'   
+    document.getElementById('repl').style.display = 'block'
