@@ -155,20 +155,6 @@ def init():
     global saving_js_module
     saving_js_module = file_library.newFile()
 
-    console.log("Made it HERE 3")
-
-    #uboard for SPIKE Prime communication
     global uboard
-    
-    try:
-        uboard = upython_board.uRepl()
-        console.log("uboard instance created successfully")
-        console.log(f"uboard object: {uboard}")
-        console.log(f"uboard connected status: {uboard.connected}")
-    except Exception as e:
-        console.log(f"Error creating uboard instance: {str(e)}")
-        console.log(f"Error type: {type(e).__name__}")
-        # Create a fallback None object if uboard creation fails
-        uboard = None
 
     console.log("Global variables initialized")

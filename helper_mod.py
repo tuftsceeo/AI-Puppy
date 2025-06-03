@@ -80,7 +80,7 @@ async def stop_running_code():
                 print_jav.print_custom_terminal("Could not recover connection. Please reconnect manually.")
         
         window.fadeImage('') #do this to clear gifs
-        
+
 async def debugging_time():
     """
     Enable debugging mode - disable certain buttons and enable terminal.
@@ -304,15 +304,28 @@ async def handle_board(event):
             document.getElementById('gif').style.visibility = 'visible'
             document.getElementById('gif').style.display = 'block'
             code = event.detail.code
-
-            # Use uboard's paste method instead of terminal.eval
-            await my_globals.uboard.paste('\x05' + code + "#**END-CODE**#" + 
-                                         '\x04')
+            
+            try:
+                # Use uboard's paste method - make sure we're using the board instance
+                await my_globals.uboard.board.paste('\x05' + code + "#**END-CODE**#" + '\x04')
+                print_jav.print_custom_terminal("Code pasted successfully!")
+            except Exception as e:
+                print(f"Error pasting code: {e}")
+                print_jav.print_custom_terminal(f"Error running code: {str(e)}")
+                # Re-enable buttons on error
+                enable_buttons([my_globals.sensors, my_globals.download, 
+                               my_globals.custom_run_button, my_globals.save_btn, 
+                               my_globals.upload_file_btn, my_globals.connect,
+                               my_globals.file_list, my_globals.debug_btn, 
+                               my_globals.terminal_btn])
+                return False
+                
             my_globals.uboard.focus()
             enable_buttons([my_globals.custom_run_button])
             return False  #return False to avoid executing on browser
         else:
             print('uboard not connected')
+            print_jav.print_custom_terminal("SPIKE Prime not connected. Please connect first.")
             return True
     # 'else' is needed only if using the default editor run button (we hid it)
     # else:

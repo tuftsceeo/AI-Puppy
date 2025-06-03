@@ -66,6 +66,7 @@ console.log("MAIN.PY IMPORTS COMPLETE")
 # Initialize uboard
 try:
     uboard = upython_board.uRepl()
+    my_globals.uboard = uboard 
     console.log("uboard initialized successfully")
 except Exception as e:
     console.error(f"Failed to initialize uboard: {e}")
@@ -73,8 +74,6 @@ except Exception as e:
 try:
     console.log("main.py: running my_globals.init()...")
     my_globals.init()
-    # Update my_globals to use uboard instead of terminal
-    my_globals.uboard = uboard
 except Exception as e:
     console.log("Something went wrong initializing global variables: ", e)
 
