@@ -121,7 +121,7 @@ def clean_up_disconnect():
     Returns:
         None
     """
-    print("CLEANSHEESH")
+    print("CLEAN")
     #if you are reading sensors and you physicaly disconnect
     if(my_globals.sensors.onclick == sensor_mod.close_sensor): 
         print_jav.print_custom_terminal("""Physically Disconnected while 
@@ -184,7 +184,6 @@ async def check_files():
         if option_text == my_globals.proper_name_of_file[my_globals.lesson_num]:
             Lesson_file_found = True
         if option_text == "/flash/CEEO_AI.py":
-            print("AQUIUIUUIIUI")
             ceeo_file_found = True
     
     if not Lesson_file_found or not ceeo_file_found:
@@ -288,9 +287,9 @@ async def handle_board(event):
     Returns:
         bool: see below
     """
-    if event.type == 'mpy-run': #even of hitting our custom run button
+    if event.type == 'mpy-run': #event of hitting our custom run button
         my_globals.isRunning = True
-        print("SIUUU")
+        print("Run buttton pressed")
         await sensor_mod.close_sensor()
         if my_globals.uboard.connected:
             disable_buttons([my_globals.sensors, my_globals.download, 
@@ -306,8 +305,10 @@ async def handle_board(event):
             code = event.detail.code
             
             try:
-                # Use uboard's paste method - make sure we're using the board instance
-                await my_globals.uboard.board.paste('\x05' + code + "#**END-CODE**#" + '\x04')
+
+                await my_globals.uboard.paste(code + "#**END-CODE**#")
+                my_globals.uboard.focus()
+                
                 print_jav.print_custom_terminal("Code pasted successfully!")
             except Exception as e:
                 print(f"Error pasting code: {e}")

@@ -4,7 +4,7 @@ print_jav.py
 Authors: Javier Laveaga
 
 This script processes data chunks, extracts print statements, and displays them
-in a custom terminal.It assumes that print statements will come after the key
+in a custom terminal. It assumes that print statements will come after the key
 #**END-CODE**# is printed to the repl. This is meant to be placed at the end
 of the code that is running (done automatically in helper_mod.handle_board)
 
