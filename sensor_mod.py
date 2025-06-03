@@ -10,6 +10,7 @@ This just means that it won't show in the REPL (debug) but it is still there
 Authors: Javier Laveaga and William Goldman
 
 Updated to use uboard instead of terminal
+Optimized to prevent image flashing by separating layout creation from data updates
 
 """
 
@@ -40,6 +41,9 @@ port_names = {
     4: 'E',
     5: 'F'
 }
+
+# Keep track of current sensor layout to avoid unnecessary rebuilds
+current_sensor_layout = {}
 
 #code that gets pasted when on connecting
 sensor_code = """
@@ -176,34 +180,198 @@ port_info
 """
 
 
+def create_sensor_layout(port_info_array):
+    """
+    Creates the initial HTML layout for sensors. Only called when sensor configuration changes.
+    
+    Args:
+        port_info_array (list): Array of sensor information tuples
+        
+    Returns:
+        str: HTML string for the sensor layout
+    """
+    sensor_info_html = "<div class='sensor-info-container'>"
+    
+    for t in port_info_array:
+        if t[0] == 1:  # if something is connected to port
+            port_name = port_names[t[1]]
+            port_id = f"port-{t[1]}"
+            
+            if t[2] == 61:  # color sensor
+                sensor_info_html += f"""
+                <div class="sensor-info" id="{port_id}">
+                    <div class="sensor-info-item">
+                        <div class="sensor-stack-left">
+                            <span class="port-name">{port_name}</span>
+                        </div>
+                        <div class="sensor-stack-right">
+                            <span>
+                                <img src="images/spike color_sensor_display.png" alt="color sensor">
+                            </span>
+                            <span class="sensor-value">
+                                <div class="colorCircle" id="{port_id}-color" style="background-color: unknown;"></div>
+                                <span id="{port_id}-text">Unknown</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                """
+            elif t[2] in [48, 49, 65]:  # motors
+                sensor_info_html += f"""
+                <div class="sensor-info" id="{port_id}">
+                    <div class="sensor-info-item">
+                        <div class="sensor-stack-left">
+                            <span class="port-name">{port_name}</span>
+                        </div>
+                        <div class="sensor-stack-right">
+                            <span><img src="images/spike medium_motor_display.png" alt="Motor"></span>
+                            <span class="sensor-value" id="{port_id}-value">0 °</span>
+                        </div>
+                    </div>
+                </div>
+                """
+            elif t[2] == 62:  # distance sensor
+                sensor_info_html += f"""
+                <div class="sensor-info" id="{port_id}">
+                    <div class="sensor-info-item">
+                        <div class="sensor-stack-left">
+                            <span class="port-name">{port_name}</span>
+                        </div>
+                        <div class="sensor-stack-right">
+                            <span><img src="images/spike distance_sensor_display.png" alt="distance sensor"></span>
+                            <span class="sensor-value" id="{port_id}-value">0 mm</span>
+                        </div>
+                    </div>
+                </div>
+                """
+            elif t[2] == 63:  # force sensor
+                sensor_info_html += f"""
+                <div class="sensor-info" id="{port_id}">
+                    <div class="sensor-info-item">
+                        <div class="sensor-stack-left">
+                            <span class="port-name">{port_name}</span>
+                        </div>
+                        <div class="sensor-stack-right">
+                            <span><img src="images/spike push_sensor_display.png" alt="force sensor"></span>
+                            <span class="sensor-value" id="{port_id}-value">0 N</span>
+                        </div>
+                    </div>
+                </div>
+                """
+            elif t[2] == 64:  # light matrix
+                sensor_info_html += f"""
+                <div class="sensor-info" id="{port_id}">
+                    <div class="sensor-info-item">
+                        <div class="sensor-stack-left">
+                            <span class="port-name">{port_name}</span>
+                        </div>
+                        <div class="sensor-stack-right">
+                            <span><img src="images/spike light_matrix_display.png" alt="light matrix"></span>
+                            <span class="sensor-value" id="{port_id}-value">1</span>
+                        </div>
+                    </div>
+                </div>
+                """
+    
+    sensor_info_html += "</div>"
+    return sensor_info_html
+
+
+def update_sensor_values(port_info_array):
+    """
+    Updates only the sensor values without rebuilding the layout.
+    
+    Args:
+        port_info_array (list): Array of sensor information tuples
+    """
+    color_detected = ["Red", "Green", "Blue", "Magenta", 
+                      "Yellow", "Orange", "Azure", "Black", "White", "Unknown"]
+    
+    for t in port_info_array:
+        if t[0] == 1:  # if something is connected to port
+            port_id = f"port-{t[1]}"
+            number = t[3]
+            
+            if t[2] == 61:  # color sensor
+                color_name = (
+                    color_detected[number - 1] 
+                    if 0 < number <= len(color_detected) else "Unknown"
+                )
+                
+                # Update color circle and text
+                color_element = document.getElementById(f"{port_id}-color")
+                text_element = document.getElementById(f"{port_id}-text")
+                
+                if color_element and text_element:
+                    color_element.style.backgroundColor = color_name.lower()
+                    text_element.innerText = color_name
+                    
+            elif t[2] in [48, 49, 65]:  # motors
+                value_element = document.getElementById(f"{port_id}-value")
+                if value_element:
+                    value_element.innerText = f"{number} °"
+                    
+            elif t[2] == 62:  # distance sensor
+                value_element = document.getElementById(f"{port_id}-value")
+                if value_element:
+                    value_element.innerText = f"{number} mm"
+                    
+            elif t[2] == 63:  # force sensor
+                value_element = document.getElementById(f"{port_id}-value")
+                if value_element:
+                    value_element.innerText = f"{number} N"
+                    
+            elif t[2] == 64:  # light matrix
+                value_element = document.getElementById(f"{port_id}-value")
+                if value_element:
+                    value_element.innerText = str(number)
+
+
+def sensors_layout_changed(new_layout, old_layout):
+    """
+    Check if the sensor configuration has changed.
+    
+    Args:
+        new_layout (list): New sensor configuration
+        old_layout (dict): Previous sensor configuration
+        
+    Returns:
+        bool: True if layout changed, False otherwise
+    """
+    # Create a simplified representation for comparison
+    new_config = {}
+    for t in new_layout:
+        if t[0] == 1:  # connected
+            new_config[t[1]] = t[2]  # port -> sensor_type
+    
+    return new_config != old_layout
+
+
 #sensor_info and get terminal in same button
 async def on_sensor_info(event):
     """
     Handles sensor information display logic, toggles between sensor info and terminal view.
+    Optimized to prevent image flashing by only updating values, not rebuilding layout.
 
     Args:
         event (Event): The event triggering the sensor information display.
     """
     print("ON-SENSOR")  
-    #global sensor
-    global device_names
+    global current_sensor_layout
 
     my_globals.stop_loop = False
 
     # next time sensors clicked, will hide sensor info
     my_globals.sensors.onclick = close_sensor
-    print("SIUMAMA")
     sensor = False #so that on next click it displays terminal
-
-    #document.getElementById('repl').style.display = 'none'
 
     # sensors.innerText = 'Get Terminal'
     my_globals.sensors.innerText = 'Close'
-    #execute code for thisL 
-    # [(1, 0, 61), (0, 0, 0), (1, 2, 63), (1, 3, 48), (1, 4, 62), (1, 5, 64)]
+    
     print("STOP-LOOP", my_globals.stop_loop)
-    color_detected = ["Red", "Green", "Blue", "Magenta", 
-                      "Yellow", "Orange", "Azure", "Black", "White", "Unknown"]
+    
+    # Flag to track if we need to rebuild the layout
+    layout_built = False
 
     while not my_globals.stop_loop:
         # Updated to use uboard instead of terminal
@@ -213,67 +381,23 @@ async def on_sensor_info(event):
             print(f"Error evaluating sensor code: {e}")
             break
 
-        # Initialize HTML content for sensor info
-        sensor_info_html = "<div class='sensor-info-container'>" 
+        # Check if sensor configuration changed
+        if sensors_layout_changed(port_info_array, current_sensor_layout) or not layout_built:
+            print("Sensor layout changed, rebuilding...")
+            # Update current layout tracking
+            current_sensor_layout = {}
+            for t in port_info_array:
+                if t[0] == 1:
+                    current_sensor_layout[t[1]] = t[2]
+            
+            # Rebuild the entire layout
+            sensor_info_html = create_sensor_layout(port_info_array)
+            document.getElementById('sensor-info').innerHTML = sensor_info_html
+            layout_built = True
+        else:
+            # Just update the values
+            update_sensor_values(port_info_array)
 
-        #t[2] is function/device id & t[1] is port num
-        #iterating over tuples/ports and displaying on website
-        for t in port_info_array: 
-            port_name = port_names[t[1]]
-            if t[0] == 1: #if something is connected to port
-                #call corresponding funcitons with corresponding ports
-                if my_globals.stop_loop:
-                    break
-                #number is tuple with some sort of sensor value
-
-                # Updated to check uboard connection instead of terminal
-                if not my_globals.uboard.connected:
-                    break
-                number = t[3] #number associated with device
-                #For color sensor
-                if (t[2] == 61):
-                    #checking to see that color returned by SPIKE is in list of
-                    # known colors
-                    color_name = (
-                        color_detected[number - 1] 
-                        if 0 < number <= len(color_detected) else "Unknown"
-                    )
-                    sensor_info_html = display_color_sensor(port_name, 
-                                    color_name.lower(), color_detected, number,
-                                    sensor_info_html)
-                elif (t[2] == 48 or t[2] == 49 or t[2] == 65): #medium motor
-                    source = "images/spike medium_motor_display.png"
-                    alt = "Motor"
-                    sensor_info_html = display_sensors(source, alt, number,
-                                            port_name, "°", sensor_info_html) 
-                elif (t[2] == 62): #distance sensor
-                    source = "images/spike distance_sensor_display.png" 
-                    alt = "distance sensor"
-                    sensor_info_html = display_sensors(source, alt, number,
-                                            port_name, "mm", sensor_info_html) 
-                elif (t[2] == 63): #force sensor
-                    source = "images/spike push_sensor_display.png"
-                    alt = "force sensor"
-                    sensor_info_html = display_sensors(source, alt, number,
-                                            port_name, "N", sensor_info_html) 
-                elif (t[2] == 64): #light matrix
-                    source = "images/spike light_matrix_display.png"
-                    alt = "light matrix"
-                    sensor_info_html = display_sensors(source, alt, number,
-                                            port_name, "", sensor_info_html) 
-                else:
-                    sensor_info_html += f"""
-                        <div class="sensor-info-item">
-                            <span>{number} </span>
-                            <span>Device: {device_names[t[2]]}</span>
-                            <span>Port: {port_names[t[1]]}</span>
-                        </div>
-                    """ 
-
-        sensor_info_html += "</div>"  # Close the container
-
-        # Update the sensor info container with new HTML content
-        document.getElementById('sensor-info').innerHTML = sensor_info_html
         print("In LOOP ")
 
         # Add a small delay to prevent overwhelming the system
@@ -286,6 +410,8 @@ async def on_sensor_info(event):
 def display_sensors(source, alt, number, port_name, unit, sensor_info_html):
     """
     Updates the sensor information HTML content for non-color sensors.
+    DEPRECATED: This function is kept for backward compatibility but is no longer used
+    in the optimized version.
 
     Args:
         source (str): The image source for the sensor.
@@ -318,6 +444,8 @@ def display_color_sensor(port_name, color_name, color_array, number,
                          sensor_info_html):
     """
     Updates the sensor information HTML content for the color sensor.
+    DEPRECATED: This function is kept for backward compatibility but is no longer used
+    in the optimized version.
 
     Args:
         port_name (str): The name of the port.
@@ -361,6 +489,7 @@ async def close_sensor(event=None):
         event (Event, optional): The event triggering the sensor information 
         closure.
     """
+    global current_sensor_layout
     
     print("In_CLose")
     #class button1 disabling
@@ -369,6 +498,10 @@ async def close_sensor(event=None):
                     my_globals.save_btn, my_globals.connect, 
                     my_globals.file_list, my_globals.debug_btn, my_globals.terminal_btn])
     my_globals.stop_loop = True
+    
+    # Reset layout tracking
+    current_sensor_layout = {}
+    
     #(min of 0.32 - worst case scenario (when you trigger stop_loop boolean
     #in close sensor right before calling eval in while loop of on_sensor info))
     await asyncio.sleep(0.5) #allow while loop to finish its current iteration 
