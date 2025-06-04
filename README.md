@@ -21,7 +21,7 @@ In addition to the lesson-specific features, this site includes many similar fea
 - The ability to download and upload code onto and from the LEGO SPIKE™ Prime and your computer
 - Code editor and terminal messages
   
-![User Interface Overview](https://github.com/user-attachments/assets/bef1dbfa-7326-4838-9671-3ca2ab7584fe)
+![User Interface Overview](https://github.com/user-attachments/assets/c055747c-51a1-47ca-8635-217c673a2df9)
 
 ## Important Resources and Maintenance
 - ### Software/Dependencies
