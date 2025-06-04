@@ -25,7 +25,7 @@ In addition to the lesson-specific features, this site includes many similar fea
 
 ## Important Resources and Maintenance
 - ### Software/Dependencies
-    With the 2025 update, most of the code is self-contained. However, certain libraries are still imported so if new issues appear with the site, it is likely that these resouces have become deprecated:
+    With the 2025 update, most of the code is self-contained. However, certain libraries are still imported so if new issues appear with the site, it is likely that these resources have become deprecated:
 
     - [Micro Repl Version 0.8.2](https://cdn.jsdelivr.net/npm/micro-repl@0.8.2/serial.js)
     - [2025.2.1 Pyscript](https://pyscript.net/releases/2025.2.1/core.js)
