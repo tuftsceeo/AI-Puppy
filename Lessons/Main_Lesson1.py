@@ -23,7 +23,6 @@ f_sensor = port.F
 hub_color1 = color.AZURE
 ai.button_color(hub_color1)
 
-print('**Jav-MEssi') #change to see if changes sync on lesson files (Jul 30)
 print('**Now in training mode')
 
 train_num = 3

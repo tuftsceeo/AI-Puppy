@@ -17,7 +17,6 @@
     <link rel="stylesheet" href="https://pyscript.net/releases/2025.2.1/core.css">
 
     <script src="script.js"></script>
-    <script type="mpy-editor" src="./main.py" config="./pyscript.toml"></script>
     <link rel="icon" type="image/png" href="images/favicon-32x32.png">
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> <!--For save button-->
@@ -25,7 +24,7 @@
 
 </head>
 <body id = "lesson2">
-     
+    <script type="mpy-editor" src="./main.py" config="./pyscript.toml" setup></script>
     <header>
         <nav class="headbar">
             <a href="index.html" id="lesson1-link" >Lesson 1</a>
@@ -82,11 +81,11 @@
         <div class="container2">
             <div class="header">
                 <div class="topDisplay">
-                    <button class="button1" id="connect-spike">Connect</button>
+                    <button class="button1 active" id="connect-spike">Connect</button>
                      <!--FOR RUN BUTTON-->
                     <!-- partial:index.partial.html -->
                     <div class="button-row">
-                        <button class="button | button--toggle button--play" id="custom-run-button" data-editor-id="MPcode"> 
+                       <button class="button | button--toggle button--play disabled" id="custom-run-button" data-editor-id="MPcode" disabled> 
                             <i class="ph-play | gg-play-button"></i>
                             <i class="ph-pause | gg-play-stop"></i>
                         </button>
