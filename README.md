@@ -38,6 +38,9 @@ In addition to the lesson-specific features, this site includes many similar fea
     - [Pyscript Recipes](https://pyscript.recipes/latest/)
 
 ## Update Log
- - June 2025: William Goldman replaces andrea-terminal and ampy with uboard. He creates a new repository in the tuftsceeo GitHub organization. The most updated code is stored here and in the corresponding [Pyscript Page](https://iliketocode2.pyscriptapps.com/ai-puppy-2025/latest/index.html).
- - September 2024: Javier Laveaga completes organizational updates and lesson updates in the AI-Puppy-UI repository.
- - July 2024: Izzy Morales, Javier Laveaga, William Goldman, Rachael Azrialy, and Emmett Berryman complete the initial site. It is contained in William Goldman's [AI-Puppy-UI repository](https://github.com/iliketocode2/AI-Puppy-UI).
+ - June 2025: 
+    - William Goldman replaces andrea-terminal and ampy with uboard. He creates a new repository in the tuftsceeo GitHub organization. The most updated code is stored here and in the corresponding [Pyscript Page](https://iliketocode2.pyscriptapps.com/ai-puppy-2025/latest/index.html).
+ - September 2024: 
+    - Javier Laveaga completes organizational updates and lesson updates in the AI-Puppy-UI repository.
+ - July 2024: 
+    - Izzy Morales, Javier Laveaga, William Goldman, Rachael Azrialy, and Emmett Berryman complete the initial site. It is contained in William Goldman's [AI-Puppy-UI repository](https://github.com/iliketocode2/AI-Puppy-UI).
