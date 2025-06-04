@@ -9,7 +9,7 @@ The goal of this project is to have students learn about training and coding dif
 This project is planned to scale to future Placemats, built by the Tufts CEEO.
 
 ## Using this tool
-1. Visit the [website](https://iliketocode2.github.io/AI-Puppy-UI/).
+1. Visit the [website](https://iliketocode2.pyscriptapps.com/ai-puppy-2025/latest/index.html).
 2. Connect a SPIKE™ Prime to your computer using a micro usb to usb-c or micro usb to usb cord.
 3. Press the 'Connect' button and follow prompts to download the proper file for each lesson and run and edit your code.
 
@@ -22,3 +22,22 @@ In addition to the lesson-specific features, this site includes many similar fea
 - Code editor and terminal messages
   
 ![User Interface Overview](https://github.com/user-attachments/assets/bef1dbfa-7326-4838-9671-3ca2ab7584fe)
+
+## Important Resources and Maintenance
+- ### Software/Dependencies
+    With the 2025 update, most of the code is self-contained. However, certain libraries are still imported so if new issues appear with the site, it is likely that these resouces have become deprecated:
+
+    - [Micro Repl Version 0.8.2](https://cdn.jsdelivr.net/npm/micro-repl@0.8.2/serial.js)
+    - [2025.2.1 Pyscript](https://pyscript.net/releases/2025.2.1/core.js)
+    - [2025.2.1 Pyscript Styling](https://pyscript.net/releases/2025.2.1/core.css)
+    - [Chris's restapi](https://chrisrogers.pyscriptapps.com/cbr-libraries/latest/core/restapi.py)
+    - [Chris's file os](https://chrisrogers.pyscriptapps.com/cbr-libraries/latest/core/file_os.py)
+- ### Reference
+    - If you have access, the [2025 AI Puppy Notion page](https://www.notion.so/fetlab/Summer-2025-200df3d0e05280ad9ffbdbf06aaf0b73?p=206df3d0e05280eb8f89f5b3adb001dd&pm=c)
+    - [Pyscript Docs](https://docs.pyscript.net/2025.2.1/)
+    - [Pyscript Recipes](https://pyscript.recipes/latest/)
+
+## Update Log
+ - June 2025: William Goldman replaces andrea-terminal and ampy with uboard. He creates a new repository in the tuftsceeo GitHub organization. The most updated code is stored here and in the corresponding [Pyscript Page](https://iliketocode2.pyscriptapps.com/ai-puppy-2025/latest/index.html).
+ - September 2024: Javier Laveaga completes organizational updates and lesson updates in the AI-Puppy-UI repository.
+ - July 2024: Izzy Morales, Javier Laveaga, William Goldman, Rachael Azrialy, and Emmett Berryman complete the initial site. It is contained in William Goldman's [AI-Puppy-UI repository](https://github.com/iliketocode2/AI-Puppy-UI).
