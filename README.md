@@ -9,7 +9,7 @@ The goal of this project is to have students learn about training and coding dif
 This project is planned to scale to future Placemats, built by the Tufts CEEO.
 
 ## Using this tool
-1. Visit the [website](https://iliketocode2.pyscriptapps.com/ai-puppy-2025/latest/index.html).
+1. Visit the [website](https://tuftsceeo.pyscriptapps.com/ai-puppy/latest/index.html)
 2. Connect a SPIKE™ Prime to your computer using a micro usb to usb-c or micro usb to usb cord.
 3. Press the 'Connect' button and follow prompts to download the proper file for each lesson and run and edit your code.
 
