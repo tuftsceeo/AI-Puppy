@@ -39,7 +39,7 @@ In addition to the lesson-specific features, this site includes many similar fea
 
 ## Update Log
  - June 2025: 
-    - William Goldman replaces andrea-terminal and ampy with uboard. He creates a new repository in the tuftsceeo GitHub organization. The most updated code is stored here and in the corresponding [Pyscript Page](https://iliketocode2.pyscriptapps.com/ai-puppy-2025/latest/index.html).
+    - William Goldman replaces andrea-terminal and ampy with uboard. He creates a new repository in the tuftsceeo GitHub organization. The most updated code is stored here and in the corresponding [Pyscript Page](https://tuftsceeo.pyscriptapps.com/ai-puppy/latest/index.html)
  - September 2024: 
     - Javier Laveaga completes organizational updates and lesson updates in the AI-Puppy-UI repository.
  - July 2024: 
